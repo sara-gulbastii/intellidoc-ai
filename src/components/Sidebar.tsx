@@ -6,84 +6,79 @@ interface SidebarProps {
   onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (id: string) => void;
   isProcessing: boolean;
+  darkMode: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ documents, onUpload, onRemove, isProcessing }) => {
+const Sidebar: React.FC<SidebarProps> = ({ documents, onUpload, onRemove, isProcessing, darkMode }) => {
   const formatSize = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   };
 
   return (
-    <aside className="w-80 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+    <aside className={`w-80 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-r flex flex-col`}>
       <div className="p-6">
-        <h2 className="text-white font-bold text-xl mb-6">Knowledge Base</h2>
+        <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Knowledge Base</h2>
         
-        <div className="space-y-4">
-          <div className="relative">
-            <input
-              type="file"
-              multiple
-              accept=".pdf"
-              onChange={onUpload}
-              className="hidden"
-              id="pdf-upload"
-              disabled={isProcessing}
-            />
-            <label
-              htmlFor="pdf-upload"
-              className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-700 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-slate-800/50 transition-all duration-200 ${
-                isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {isProcessing ? (
-                <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                  <span className="text-sm text-slate-400">Processing...</span>
-                </div>
-              ) : (
-                <>
-                  <svg className="w-8 h-8 text-slate-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <span className="text-sm text-slate-400 font-medium">Upload PDF Documents</span>
-                  <span className="text-xs text-slate-600 mt-1">Multi-select supported</span>
-                </>
-              )}
-            </label>
-          </div>
+        <div className="relative group">
+          <input
+            type="file"
+            multiple
+            accept=".pdf"
+            onChange={onUpload}
+            className="hidden"
+            id="pdf-upload"
+            disabled={isProcessing}
+          />
+          <label
+            htmlFor="pdf-upload"
+            className={`block p-8 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all ${
+              isProcessing 
+                ? 'border-gray-400 opacity-50' 
+                : 'border-blue-500 hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-gray-800'
+            } ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}
+          >
+            {isProcessing ? (
+              <div className="flex flex-col items-center">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p className="text-sm">Processing PDFs...</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <svg className="w-12 h-12 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="font-medium">Drop PDFs here or click to upload</p>
+                <p className="text-xs opacity-75">Multiple files supported</p>
+              </div>
+            )}
+          </label>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar">
-        <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 px-2">Uploaded Files</h3>
+      <div className="flex-1 overflow-y-auto px-4">
+        <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 px-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Uploaded Documents</h3>
         <div className="space-y-2">
           {documents.length === 0 && !isProcessing && (
-            <div className="px-2 py-4 text-center">
-              <p className="text-slate-600 text-sm italic">No documents uploaded yet.</p>
-            </div>
+            <p className={`text-center py-8 text-sm italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              No documents yet. Upload to begin.
+            </p>
           )}
-          
           {documents.map((doc) => (
-            <div
-              key={doc.id}
-              className="group flex items-center gap-3 p-3 bg-slate-800/40 rounded-lg border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-colors"
-            >
-              <div className="w-8 h-8 shrink-0 bg-red-500/10 text-red-500 rounded-md flex items-center justify-center">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7 2a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-6-6H7zm7 1.5L18.5 9H14V3.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2z" />
+            <div key={doc.id} className={`group flex items-center gap-3 p-3 rounded-lg ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'} transition-all`}>
+              <div className="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 2a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0 3a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0 3a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-slate-200 text-sm font-medium truncate leading-tight">{doc.name}</p>
-                <p className="text-slate-500 text-[10px] mt-0.5">{formatSize(doc.size)}</p>
+                <p className={`text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{doc.name}</p>
+                <p className="text-xs opacity-75">{formatSize(doc.size)}</p>
               </div>
               <button
                 onClick={() => onRemove(doc.id)}
-                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-400 transition-all"
+                className="opacity-0 group-hover:opacity-100 p-1.5 text-red-500 hover:bg-red-50 rounded transition-all"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -94,11 +89,13 @@ const Sidebar: React.FC<SidebarProps> = ({ documents, onUpload, onRemove, isProc
         </div>
       </div>
 
-      <div className="p-6 border-t border-slate-800 bg-slate-900/50">
-        <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4">
-          <p className="text-blue-400 text-xs leading-relaxed">
-            <strong className="block mb-1">Advanced RAG Engine</strong>
-            Intelligent retrieval and synthesis from your uploaded documents for accurate, context-aware answers.
+      <div className={`p-6 border-t ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl p-4 shadow-lg">
+          <p className="text-sm font-medium">
+            <strong>Advanced RAG Engine Active</strong>
+          </p>
+          <p className="text-xs mt-1 opacity-90">
+            Answers grounded in your documents • No hallucinations
           </p>
         </div>
       </div>

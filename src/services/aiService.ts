@@ -8,7 +8,7 @@ export class AIService {
   constructor() {
     const apiKey = import.meta.env.VITE_AI_API_KEY;
     if (!apiKey) {
-      throw new Error("AI API key not found. Set VITE_AI_API_KEY.");
+      throw new Error("AI API key not found. Set VITE_AI_API_KEY in environment.");
     }
     this.client = new GoogleGenerativeAI(apiKey);
   }
@@ -20,17 +20,18 @@ export class AIService {
   ) {
     const contextPrompt =
       context.length > 0
-        ? `Use ONLY the following context from uploaded documents to answer.
-           Cite source as [filename.pdf].
-           If not in context, say: "Not found in documents."
-
+        ? `Use ONLY the following context from uploaded documents to answer the question.
+           Always cite the document name in brackets, e.g., [Document.pdf].
+           If the answer is not in the context, say "I don't know based on the provided documents."
+           
            CONTEXT:
-           ${context.map((c) => `[${c.docName}]: ${c.text}`).join("\n\n")}`
-        : "No documents uploaded yet.";
+           ${context.map(c => `[From ${c.docName}]: ${c.text}`).join('\n\n')}
+           `
+        : "No document context is available. Please inform the user that they should upload PDFs first if they want context-aware answers.";
 
-    const systemInstruction = `You are an expert Document Assistant.
-    Answer accurately using only the provided context.
-    Be concise and professional.
+    const systemInstruction = `You are a professional Document Assistant. 
+    Your goal is to provide accurate, grounded answers based solely on the provided PDF context. 
+    Maintain a helpful, clear, and objective tone.
     ${contextPrompt}`;
 
     try {
@@ -49,13 +50,13 @@ export class AIService {
       const text = result.response.text();
 
       return {
-        text: text || "No response generated.",
-        sources: Array.from(new Set(context.map((c) => c.docName))),
+        text: text || "I'm sorry, I couldn't generate a response.",
+        sources: Array.from(new Set(context.map(c => c.docName))),
       };
     } catch (error) {
-      console.error("AI Error:", error);
+      console.error("AI Service Error:", error);
       return {
-        text: "Sorry, I couldn't process your question right now.",
+        text: "I encountered an issue while processing your request. Please try again.",
         sources: [],
       };
     }

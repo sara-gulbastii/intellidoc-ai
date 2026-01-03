@@ -1,11 +1,10 @@
-
 # IntelliDoc AI — Document Intelligence Assistant
 
 A modern full-stack React web app for intelligent PDF Q&A using advanced Retrieval-Augmented Generation (RAG).
 
 ## Features
 - Upload multiple PDFs
-- Extract and chunk text client-side
+- Client-side text extraction and chunking
 - Smart retrieval for relevant context
 - Real-time chat with accurate, sourced answers
 - Beautiful dark-mode UI with Tailwind CSS
@@ -16,12 +15,9 @@ A modern full-stack React web app for intelligent PDF Q&A using advanced Retriev
 - Vite
 - Tailwind CSS
 - pdf.js for PDF processing
-- Custom AI backend service
+- Custom AI service
 
 ## Live Demo
-[Deployed on Vercel — coming soon]
+Coming soon on Vercel
 
-## Local Development
-```bash
-npm install
-npm run dev
+Built as a freelance portfolio project — fully custom and ready for client adaptations.

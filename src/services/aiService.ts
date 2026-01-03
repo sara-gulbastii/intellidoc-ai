@@ -1,71 +1,63 @@
-// Requires pdfjs-dist in dependencies (we'll add it)
-import * as pdfjsLib from "pdfjs-dist/build/pdf";
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+const MODEL_NAME = "gemini-1.5-flash";
 
-export const extractTextFromPdf = async (file: File): Promise<string> => {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = "";
+export class AIService {
+  private client: GoogleGenerativeAI;
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(" ");
-    fullText += pageText + "\n";
+  constructor() {
+    const apiKey = import.meta.env.VITE_AI_API_KEY;
+    if (!apiKey) {
+      throw new Error("AI API key not found. Set VITE_AI_API_KEY.");
+    }
+    this.client = new GoogleGenerativeAI(apiKey);
   }
 
-  return fullText.trim();
-};
+  async generateAnswer(
+    query: string,
+    context: { text: string; docName: string }[],
+    chatHistory: any[]
+  ) {
+    const contextPrompt =
+      context.length > 0
+        ? `Use ONLY the following context from uploaded documents to answer.
+           Cite source as [filename.pdf].
+           If not in context, say: "Not found in documents."
 
-export const chunkText = (
-  text: string,
-  chunkSize: number = 1000,
-  overlap: number = 200
-): string[] => {
-  const chunks: string[] = [];
-  let startIndex = 0;
+           CONTEXT:
+           ${context.map((c) => `[${c.docName}]: ${c.text}`).join("\n\n")}`
+        : "No documents uploaded yet.";
 
-  while (startIndex < text.length) {
-    const endIndex = Math.min(startIndex + chunkSize, text.length);
-    chunks.push(text.slice(startIndex, endIndex));
-    startIndex += chunkSize - overlap;
-  }
+    const systemInstruction = `You are an expert Document Assistant.
+    Answer accurately using only the provided context.
+    Be concise and professional.
+    ${contextPrompt}`;
 
-  return chunks;
-};
+    try {
+      const model = this.client.getGenerativeModel({ model: MODEL_NAME });
 
-export const searchRelevantChunks = (
-  query: string,
-  documents: any[],
-  topK: number = 5
-): { text: string; docName: string }[] => {
-  const queryTerms = query
-    .toLowerCase()
-    .split(/\W+/)
-    .filter((t) => t.length > 3);
-
-  const results: { text: string; docName: string; score: number }[] = [];
-
-  documents.forEach((doc) => {
-    doc.chunks.forEach((chunk: string) => {
-      let score = 0;
-      queryTerms.forEach((term) => {
-        const regex = new RegExp(term, "gi");
-        const matches = chunk.match(regex);
-        if (matches) score += matches.length;
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: query }] }],
+        generationConfig: {
+          temperature: 0.2,
+          topP: 0.8,
+          topK: 40,
+        },
+        systemInstruction: { parts: [{ text: systemInstruction }] },
       });
-      if (score > 0) {
-        results.push({ text: chunk, docName: doc.name, score });
-      }
-    });
-  });
 
-  return results
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topK)
-    .map(({ text, docName }) => ({ text, docName }));
-};
+      const text = result.response.text();
+
+      return {
+        text: text || "No response generated.",
+        sources: Array.from(new Set(context.map((c) => c.docName))),
+      };
+    } catch (error) {
+      console.error("AI Error:", error);
+      return {
+        text: "Sorry, I couldn't process your question right now.",
+        sources: [],
+      };
+    }
+  }
+}

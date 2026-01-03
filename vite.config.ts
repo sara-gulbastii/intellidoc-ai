@@ -3,4 +3,12 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      external: ['pdfjs-dist/build/pdf.worker.entry'],
+    },
+  },
+  optimizeDeps: {
+    exclude: ['pdfjs-dist'],
+  },
 });
